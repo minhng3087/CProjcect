@@ -99,115 +99,231 @@ void soundex(char *chAlphaName, char *strResult)
 
 
 
-
 /***********************/
 
-enum{
-  COL_WORD = 0,
-  COL_NUM
-};
 GtkWidget *window;
-GtkTextView *textview_search;
+GtkWidget *entry_find;
 GtkTextView *textview_result;
 GtkWidget *quit;
 GtkWidget *find_button;
 GtkEntryCompletion *completion;
+GtkDialog *dialog_delete;
+GtkWidget *button_delete;
+GtkWidget *button_cancel_delete;
+GtkWidget *entry_delete;
+GtkWidget *delete_button;
+
+
+GtkWidget *dialog_add;
+GtkWidget *button_add;
+GtkWidget *button_add_ok;
+GtkWidget *button_cancel_add;
+GtkWidget *entry_add_word;
+GtkTextView *entry_add_mean;
 
 
 BTA *evdata;
 BTA *sound;
 
-
-
-
-void on_button_find_ev_clicked(GObject *object,gpointer user_data) {
+void search_word(GObject *object,gpointer user_data) {
   const gchar *word;
   char data[100000];
   char sou[100];
   char mean[100000];
-  int i,j=0;
+  int i;
   GtkTextBuffer *buff;
-  word = gtk_entry_get_text(GTK_ENTRY(textview_search));
-  if(strcmp(word,"")==0){ //kiem tra xem nhap chua
-    buff = gtk_text_view_get_buffer(textview_result); // Returns the GtkTextBuffer being displayed by this text view.
+  word = gtk_entry_get_text(GTK_ENTRY(entry_find));
+  if(strcmp(word,"")==0){ 
+    buff = gtk_text_view_get_buffer(textview_result); 
     gtk_text_buffer_set_text(buff,"\n     ===> ERROR: No word is entered! <===",strlen("\n     ===> ERROR: No word is entered! <==="));
     return;
   }
   if(bfndky(evdata,(char *)word,&i) == 0) {
-    btsel(evdata,(char*)word,data,1000,&i);
+    btsel(evdata,(char*)word,data,100000,&i);
     strcpy(mean, data);
-    buff = gtk_text_view_get_buffer(textview_result); //Returns the GtkTextBuffer being displayed by this text view
+    buff = gtk_text_view_get_buffer(textview_result);
     gtk_text_buffer_set_text(buff,(gchar*)mean,strlen(mean));
+    return;
   }
-  else {
-    sound = btopn("../data/soundex.dat",0,0);
-    soundex((char*)word,sou);
-    if(bfndky(sound,(char*)sou,&i)==0){
-      btsel(sound,sou,mean,1000,&i);
-      buff = gtk_text_view_get_buffer(textview_result); //Returns the GtkTextBuffer being displayed by this text view
-      gtk_text_buffer_set_text(buff,(gchar*)mean,strlen(mean));
-      btcls(sound);
-  }
-  }
+  // else {
+  //   sound = btopn("../data/soundex.dat",0,0);
+  //   soundex((char*)word,sou);
+  //   if(bfndky(sound,(char*)sou,&i)==0){
+  //     btsel(sound,sou,mean,100000,&i);
+  //     buff = gtk_text_view_get_buffer(textview_result); //Returns the GtkTextBuffer being displayed by this text view
+  //     gtk_text_buffer_set_text(buff,(gchar*)mean,strlen(mean));
+  //    }  
+  // }
   
 }
 
-void match_select(GtkEntryCompletion *widget,GtkTreeModel *model,GtkTreeIter *iter,gpointer user_data){
-  GValue value = {0, };
-  const char *word;
-  gtk_tree_model_get_value(model,iter,COL_WORD,&value);//khoi tao va thiet lap value vao COL_WORD
-  word = g_value_get_string(&value);//lay noi dung chuoi trong value
-  gtk_entry_set_text(GTK_ENTRY(textview_search),word);
-  g_value_unset(&value);// xoa gia tri va unset kieu du lieu
-}
 
 
-void setup_list()
+void list_word_search(GtkWidget* text)
 {
-
-  GtkListStore *liststore;
+  GtkListStore *liststore; 
   GtkTreeIter iter;
+
   char word[1000];
-  char data[1000];
   char mean[1000];
-  int i;
-  completion = gtk_entry_completion_new(); //creat a new GtkEntryCompletion
-  gtk_entry_completion_set_text_column(completion,COL_WORD);//ham cai dat completion de hien thi cac chuoi trong danh sach,lay cac chuoi tu column trong cac mau completion
-  gtk_entry_set_completion(GTK_ENTRY(textview_search),completion);
-  g_signal_connect(G_OBJECT(completion),"match-selected",G_CALLBACK(match_select),NULL);//ket noi tin hieu
+  int rsize;
+  completion = gtk_entry_completion_new();
+  gtk_entry_completion_set_text_column(completion,0);
+  gtk_entry_set_completion(GTK_ENTRY(text),completion);
+  g_object_unref(completion);
+
   liststore = gtk_list_store_new(1,G_TYPE_STRING);
   btpos(evdata,1);
-  while(btseln(evdata,word,data,1000,&i)==0){
+  while(btseln(evdata,word,mean,1000,&rsize)==0){
     gtk_list_store_append(liststore,&iter);
-    gtk_list_store_set(liststore,&iter,COL_WORD,word,-1);
+    gtk_list_store_set(liststore,&iter,0,word,-1);
   }
-  gtk_entry_completion_set_model(completion,GTK_TREE_MODEL(liststore));//neu completion da duoc cai dat, no se remove truoc khi cai dat cai moi
+  gtk_entry_completion_set_model(completion,GTK_TREE_MODEL(liststore));
+  g_object_unref(GTK_TREE_MODEL(liststore));
 }
 
 
+/***************************************************/
+void clicked_delete(GObject *object,gpointer user_data){
+  GtkTextBuffer *buff;
+  gtk_entry_set_text(GTK_ENTRY(entry_find),""); //tao ra mot widget 
+  buff = gtk_text_view_get_buffer(textview_result);
+  gtk_text_buffer_set_text(buff,"",1);
+  gtk_dialog_run(GTK_DIALOG(dialog_delete));
+  gtk_widget_hide(GTK_WIDGET(dialog_delete)); //khi chay xong phai an
+}
+
+void button_detele_clicked(GObject *object,gpointer user_data){
+  const gchar *word;
+  GtkWidget *message;
+  int i;
+  word = gtk_entry_get_text(GTK_ENTRY(entry_delete));//lay tu o entry_delete
+  printf("%s\n",word);
+  if(bfndky(evdata,(char*)word,&i)==0){ // kiem tra cai data
+    message = gtk_message_dialog_new(GTK_WINDOW(dialog_delete),GTK_DIALOG_DESTROY_WITH_PARENT,GTK_MESSAGE_INFO,GTK_BUTTONS_OK,"Xoa thanh cong!","Info");
+    btdel(evdata,(char*)word);
+    gtk_window_set_title(GTK_WINDOW(message),"Infor");
+    gtk_dialog_run(GTK_DIALOG(message));
+    gtk_widget_destroy(message);
+    printf("Xoa thanh cong !!!\n");
+  }
+  else{//khi k co tu
+    message = gtk_message_dialog_new(GTK_WINDOW(dialog_delete),GTK_DIALOG_DESTROY_WITH_PARENT,GTK_MESSAGE_ERROR,GTK_BUTTONS_OK,"Khong ton tai tu nay!","Info");
+    gtk_window_set_title(GTK_WINDOW(message),"Infor");
+    gtk_dialog_run(GTK_DIALOG(message));
+    gtk_widget_destroy(message);
+  }
+  gtk_entry_set_text(GTK_ENTRY(entry_delete),"");
+  list_word_search(entry_find);
+}
+
+void button_cancel_delete_clicked(GObject *object,gpointer user_data){
+  gtk_widget_hide(GTK_WIDGET(dialog_delete));
+}
+
+
+/****************************************************/
+void button_add_ok_clicked(GObject *object,gpointer user_data){
+     GtkTextBuffer *buff;
+     GtkWidget *message;
+     GtkTextIter first,last;
+     const gchar *word;
+     const gchar *mean;
+     int i;
+     g_assert(GTK_IS_ENTRY(entry_add_word));
+     word = gtk_entry_get_text(GTK_ENTRY(entry_add_word));
+     buff = gtk_text_view_get_buffer(entry_add_mean);
+     gtk_text_buffer_get_start_iter(buff, &first);//
+     gtk_text_buffer_get_end_iter(buff, &last);
+     mean = gtk_text_buffer_get_text(buff, &first, &last, FALSE);
+     if(strcmp(word, "") == 0) return;
+     else
+          if(bfndky(evdata, (char*)word, &i) == 0){
+               message = gtk_message_dialog_new(GTK_WINDOW(dialog_add),GTK_DIALOG_DESTROY_WITH_PARENT,GTK_MESSAGE_ERROR,GTK_BUTTONS_OK,"This word  existed!","Info");
+               gtk_window_set_title(GTK_WINDOW(message), "Information");
+               gtk_dialog_run(GTK_DIALOG(message));
+               gtk_widget_destroy(message);
+          }
+          else{
+               sound = btopn("../data/soundex.dat",0,0);
+               soundex(sound, (char*)word);
+               btcls(sound);
+               message = gtk_message_dialog_new(GTK_WINDOW(dialog_add),GTK_DIALOG_DESTROY_WITH_PARENT,GTK_MESSAGE_INFO,GTK_BUTTONS_OK,"Completed !","Info");
+               gtk_window_set_title(GTK_WINDOW(message), "Information");
+               gtk_dialog_run(GTK_DIALOG(message));
+               gtk_widget_destroy(message);
+          }
+     gtk_entry_set_text(GTK_ENTRY(entry_add_word),"");
+     buff = gtk_text_view_get_buffer(entry_add_mean);
+     gtk_text_buffer_set_text(buff, "", 1);
+     list_word_search(entry_find);
+}    
+void clicked_add(GObject *object, gpointer user_data){
+     GtkTextBuffer *buff;
+     gtk_entry_set_text(GTK_ENTRY(entry_find), "");
+     buff = gtk_text_view_get_buffer(textview_result);
+     gtk_text_buffer_set_text(buff,"",1);
+     gtk_dialog_run(GTK_DIALOG(dialog_add));
+     gtk_widget_hide(GTK_WIDGET(dialog_add));
+}
+
+void button_cancel_add_clicked(GObject *object, gpointer user_data){
+     gtk_widget_hide(GTK_WIDGET(dialog_add));
+}
+
+/****************************************************************/
+
+
+
+
+
+/****************************************************************/
 int main (int argc, char *argv[]) {
-  evdata = btopn("../data/english-vietnamese.dat",0,0);
-  GtkBuilder  *builder; 
-  gtk_init (&argc, &argv);
-  builder = gtk_builder_new ();
-  gtk_builder_add_from_file (builder, "/home/minh/myProject/cmake-gtk/dic.glade", NULL);
-  window = GTK_WIDGET (gtk_builder_get_object (builder, "window"));
-  find_button = GTK_WIDGET(gtk_builder_get_object (builder, "button_find"));
-  textview_search = GTK_TEXT_VIEW(gtk_builder_get_object(builder,"entry_find"));
-  quit = GTK_WIDGET(gtk_builder_get_object(builder,"button_quit"));
-  textview_result = GTK_TEXT_VIEW(gtk_builder_get_object(builder,"textview"));
-  gtk_builder_connect_signals(builder,NULL);
+     evdata = btopn("../data/english-vietnamese.dat",0,0);
+     GtkBuilder  *builder; 
+     gtk_init (&argc, &argv);
+     builder = gtk_builder_new ();
+     gtk_builder_add_from_file (builder, "/home/minh/myProject/cmake-gtk/dic.glade", NULL);
+     //////////////////////////////////////////////
 
 
-  g_signal_connect(find_button, "clicked", G_CALLBACK (on_button_find_ev_clicked), textview_search);
+     window = GTK_WIDGET (gtk_builder_get_object (builder, "window"));
+     find_button = GTK_WIDGET(gtk_builder_get_object (builder, "button_find"));
+     entry_find = GTK_WIDGET(gtk_builder_get_object(builder,"entry_find"));
+     quit = GTK_WIDGET(gtk_builder_get_object(builder,"button_quit"));
+     textview_result = GTK_TEXT_VIEW(gtk_builder_get_object(builder,"textview"));
+     dialog_delete = GTK_DIALOG(gtk_builder_get_object(builder, "dialog_delete"));
+     delete_button = GTK_WIDGET(gtk_builder_get_object(builder, "button_remove"));
+     button_delete = GTK_WIDGET(gtk_builder_get_object(builder, "button_delete"));
+     button_cancel_delete = GTK_WIDGET(gtk_builder_get_object(builder, "button_cancel_delete"));
+     entry_delete = GTK_WIDGET(gtk_builder_get_object(builder, "entry_delete"));
+     dialog_add = GTK_WIDGET(gtk_builder_get_object(builder, "dialog_add"));
 
-  //thoat chuong trinh
-  g_signal_connect_swapped (quit, "clicked", G_CALLBACK (gtk_main_quit), NULL);
+     button_add_ok = GTK_WIDGET(gtk_builder_get_object(builder, "button_add_ok"));
+     button_add = GTK_WIDGET(gtk_builder_get_object(builder, "button_add"));
+     button_cancel_add = GTK_WIDGET(gtk_builder_get_object(builder, "button_cancel_add"));
+     entry_add_word = GTK_WIDGET(gtk_builder_get_object(builder, "entry_add_word"));
+     entry_add_mean = GTK_TEXT_VIEW(gtk_builder_get_object(builder, "entry_add_mean"));
+     gtk_builder_connect_signals(builder,NULL);
+
+     //////////////////////////////////
+     g_signal_connect(G_OBJECT(find_button), "clicked", G_CALLBACK (search_word), NULL);
+     g_signal_connect(G_OBJECT(delete_button), "clicked", G_CALLBACK(clicked_delete), NULL);
+     g_signal_connect(G_OBJECT(button_delete), "clicked", G_CALLBACK(button_detele_clicked),NULL);
+  	g_signal_connect(G_OBJECT(button_cancel_delete), "clicked", G_CALLBACK(button_cancel_delete_clicked), NULL);
+     list_word_search(entry_delete);
+
+     g_signal_connect(G_OBJECT(button_add), "clicked", G_CALLBACK(clicked_add), NULL);
+     g_signal_connect(G_OBJECT(button_add_ok), "clicked", G_CALLBACK(button_add_ok_clicked), NULL);
+     g_signal_connect(G_OBJECT(button_cancel_add), "clicked", G_CALLBACK(button_cancel_add_clicked), NULL);
+
+     //thoat chuong trinh
+     g_signal_connect_swapped (quit, "clicked", G_CALLBACK (gtk_main_quit), NULL);
 
 
-  g_object_unref(G_OBJECT(builder));
-  setup_list();
-  gtk_widget_show(window);
-  gtk_main();
+     g_object_unref(G_OBJECT(builder));
+     list_word_search(entry_find);
+     gtk_widget_show(window);
+     gtk_main();
 
 }
