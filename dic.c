@@ -4,98 +4,8 @@
 #include "inc/btree.h"
 #include <ctype.h>
 
+
 /****************************/
-void soundex(char *chAlphaName, char *strResult)
-{
-     int i;
-     int j = 0;
-     char SCode = '0';
-     char PrevCode = '0';
-     char CharTemp = '0';
-
-     for (i = 0; i < strlen(chAlphaName); i++)
-     {
-          chAlphaName[i]=tolower(chAlphaName[i]);
-     }
-
-     for (i = 0; (i < strlen(chAlphaName) && j < 4); i++)
-     {
-          CharTemp = chAlphaName[i];
-
-          switch(CharTemp)
-          {
-               case 'r':
-                    SCode = '6';
-                    break;
-               case 'm':
-               case 'n':
-                    SCode='5';
-                    break;
-               case 'l':
-                    SCode='4';
-                    break;
-               case 'd':
-               case 't':
-                    SCode='3';
-                    break;
-               case 'c':
-               case 'g':
-               case 'j':
-               case 'k':
-               case 'q':
-               case 's':
-               case 'x':
-               case 'z':
-                    SCode = '2';
-                    break;
-               case 'b':
-               case 'f':
-               case 'p':
-               case 'v':
-                    SCode = '1';
-                    break;
-               default:
-                    SCode = '0';
-                    break;
-          }
-
-          if (SCode > '0' || j==0)
-          {
-               //SCode la chu cai dau tien
-               if (j == 0)
-               {
-                    strResult[j] = chAlphaName[j];
-                   // strResult[j+1] = '\0';
-
-                    j++;
-               }
-               else if (SCode != PrevCode)
-                    {
-                         strResult[j] = SCode;
-                    //     strResult[j+1] = '\0';
-
-                         j++;
-                    }
-          }
-
-
-          if (CharTemp == 'h' || CharTemp == 'w')
-          {
-               SCode = PrevCode;
-          }
-
-          PrevCode = SCode;
-          SCode = '0';
-
-     }
-
-     for (i = j; i < 4; i++)
-     {
-          strResult[i] = '0' ;
-     }
-
-     strResult[i]='\0';
-}
 
 
 
@@ -112,7 +22,7 @@ GtkWidget *button_delete;
 GtkWidget *button_cancel_delete;
 GtkWidget *entry_delete;
 GtkWidget *delete_button;
-
+GtkWidget *box_find;
 
 GtkWidget *dialog_add;
 GtkWidget *button_add;
@@ -123,7 +33,6 @@ GtkTextView *entry_add_mean;
 
 
 BTA *evdata;
-BTA *sound;
 
 void search_word(GObject *object,gpointer user_data) {
   const gchar *word;
@@ -145,15 +54,6 @@ void search_word(GObject *object,gpointer user_data) {
     gtk_text_buffer_set_text(buff,(gchar*)mean,strlen(mean));
     return;
   }
-  // else {
-  //   sound = btopn("../data/soundex.dat",0,0);
-  //   soundex((char*)word,sou);
-  //   if(bfndky(sound,(char*)sou,&i)==0){
-  //     btsel(sound,sou,mean,100000,&i);
-  //     buff = gtk_text_view_get_buffer(textview_result); //Returns the GtkTextBuffer being displayed by this text view
-  //     gtk_text_buffer_set_text(buff,(gchar*)mean,strlen(mean));
-  //    }  
-  // }
   
 }
 
@@ -227,28 +127,24 @@ void button_add_ok_clicked(GObject *object,gpointer user_data){
      GtkTextBuffer *buff;
      GtkWidget *message;
      GtkTextIter first,last;
-     const gchar *word;
-     const gchar *mean;
+     gchar *word;
+     gchar *mean;
      int i;
-     g_assert(GTK_IS_ENTRY(entry_add_word));
      word = gtk_entry_get_text(GTK_ENTRY(entry_add_word));
-     buff = gtk_text_view_get_buffer(entry_add_mean);
-     gtk_text_buffer_get_start_iter(buff, &first);//
-     gtk_text_buffer_get_end_iter(buff, &last);
+     buff = gtk_text_view_get_buffer(GTK_TEXT_VIEW(entry_add_mean));
+     gtk_text_buffer_get_bounds (buff, &first, &last);
      mean = gtk_text_buffer_get_text(buff, &first, &last, FALSE);
      if(strcmp(word, "") == 0) return;
      else
-          if(bfndky(evdata, (char*)word, &i) == 0){
-               message = gtk_message_dialog_new(GTK_WINDOW(dialog_add),GTK_DIALOG_DESTROY_WITH_PARENT,GTK_MESSAGE_ERROR,GTK_BUTTONS_OK,"This word  existed!","Info");
+          if(bfndky(evdata,word, &i) == 0){
+               message = gtk_message_dialog_new(GTK_WINDOW(dialog_add),GTK_DIALOG_DESTROY_WITH_PARENT,GTK_MESSAGE_ERROR,GTK_BUTTONS_OK,"Từ này đã tồn tại!","Info");
                gtk_window_set_title(GTK_WINDOW(message), "Information");
                gtk_dialog_run(GTK_DIALOG(message));
                gtk_widget_destroy(message);
           }
-          else{
-               sound = btopn("../data/soundex.dat",0,0);
-               soundex(sound, (char*)word);
-               btcls(sound);
-               message = gtk_message_dialog_new(GTK_WINDOW(dialog_add),GTK_DIALOG_DESTROY_WITH_PARENT,GTK_MESSAGE_INFO,GTK_BUTTONS_OK,"Completed !","Info");
+          else {
+          btins(evdata,word,mean,strlen(mean)+1);
+          message = gtk_message_dialog_new(GTK_WINDOW(dialog_add),GTK_DIALOG_DESTROY_WITH_PARENT,GTK_MESSAGE_INFO,GTK_BUTTONS_OK,"Xóa thành công !","Info");
                gtk_window_set_title(GTK_WINDOW(message), "Information");
                gtk_dialog_run(GTK_DIALOG(message));
                gtk_widget_destroy(message);
@@ -257,6 +153,7 @@ void button_add_ok_clicked(GObject *object,gpointer user_data){
      buff = gtk_text_view_get_buffer(entry_add_mean);
      gtk_text_buffer_set_text(buff, "", 1);
      list_word_search(entry_find);
+     list_word_search(entry_delete);
 }    
 void clicked_add(GObject *object, gpointer user_data){
      GtkTextBuffer *buff;
@@ -279,28 +176,30 @@ void button_cancel_add_clicked(GObject *object, gpointer user_data){
 
 /****************************************************************/
 int main (int argc, char *argv[]) {
-     evdata = btopn("../data/english-vietnamese.dat",0,0);
+     evdata = btopn("../data/words.dat",0,0);
      GtkBuilder  *builder; 
+     GError *error = NULL;
      gtk_init (&argc, &argv);
      builder = gtk_builder_new ();
-     gtk_builder_add_from_file (builder, "/home/minh/myProject/cmake-gtk/dic.glade", NULL);
+     gtk_builder_add_from_file (builder, "../dic.glade", &error);
      //////////////////////////////////////////////
 
 
      window = GTK_WIDGET (gtk_builder_get_object (builder, "window"));
+     box_find = GTK_WIDGET(gtk_builder_get_object(builder,"box_find"));
      find_button = GTK_WIDGET(gtk_builder_get_object (builder, "button_find"));
      entry_find = GTK_WIDGET(gtk_builder_get_object(builder,"entry_find"));
      quit = GTK_WIDGET(gtk_builder_get_object(builder,"button_quit"));
      textview_result = GTK_TEXT_VIEW(gtk_builder_get_object(builder,"textview"));
+     button_delete = GTK_WIDGET(gtk_builder_get_object(builder, "button_delete"));
      dialog_delete = GTK_DIALOG(gtk_builder_get_object(builder, "dialog_delete"));
      delete_button = GTK_WIDGET(gtk_builder_get_object(builder, "button_remove"));
-     button_delete = GTK_WIDGET(gtk_builder_get_object(builder, "button_delete"));
      button_cancel_delete = GTK_WIDGET(gtk_builder_get_object(builder, "button_cancel_delete"));
      entry_delete = GTK_WIDGET(gtk_builder_get_object(builder, "entry_delete"));
+     button_add = GTK_WIDGET(gtk_builder_get_object(builder, "button_add"));
      dialog_add = GTK_WIDGET(gtk_builder_get_object(builder, "dialog_add"));
 
      button_add_ok = GTK_WIDGET(gtk_builder_get_object(builder, "button_add_ok"));
-     button_add = GTK_WIDGET(gtk_builder_get_object(builder, "button_add"));
      button_cancel_add = GTK_WIDGET(gtk_builder_get_object(builder, "button_cancel_add"));
      entry_add_word = GTK_WIDGET(gtk_builder_get_object(builder, "entry_add_word"));
      entry_add_mean = GTK_TEXT_VIEW(gtk_builder_get_object(builder, "entry_add_mean"));
@@ -325,5 +224,6 @@ int main (int argc, char *argv[]) {
      list_word_search(entry_find);
      gtk_widget_show(window);
      gtk_main();
+     btcls(evdata);
 
 }
