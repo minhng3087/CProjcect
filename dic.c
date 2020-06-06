@@ -24,12 +24,19 @@ GtkWidget *entry_delete;
 GtkWidget *delete_button;
 GtkWidget *box_find;
 
-GtkWidget *dialog_add;
+GtkDialog *dialog_add;
 GtkWidget *button_add;
 GtkWidget *button_add_ok;
 GtkWidget *button_cancel_add;
 GtkWidget *entry_add_word;
 GtkTextView *entry_add_mean;
+
+GtkDialog *dialog_edit;
+GtkWidget *button_edit;
+GtkWidget *button_edit_ok;
+GtkWidget *button_cancel_edit;
+GtkWidget *entry_edit_word;
+GtkWidget *entry_edit_mean;
 
 
 BTA *evdata;
@@ -52,6 +59,11 @@ void search_word(GObject *object,gpointer user_data) {
     strcpy(mean, data);
     buff = gtk_text_view_get_buffer(textview_result);
     gtk_text_buffer_set_text(buff,(gchar*)mean,strlen(mean));
+    return;
+  }
+  else {
+    buff = gtk_text_view_get_buffer(textview_result); 
+    gtk_text_buffer_set_text(buff,"\nTừ này hiện chưa có trong từ điển",strlen("\nTừ này hiện chưa có trong từ điển"));
     return;
   }
   
@@ -169,7 +181,47 @@ void button_cancel_add_clicked(GObject *object, gpointer user_data){
 }
 
 /****************************************************************/
-
+void clicked_edit(GObject *object,gpointer user_data){
+  GtkTextBuffer *buff;
+  gtk_entry_set_text(GTK_ENTRY(entry_find),"");
+  buff = gtk_text_view_get_buffer(textview_result);
+  gtk_text_buffer_set_text(buff,"",1);
+  gtk_dialog_run(GTK_DIALOG(dialog_edit));
+  gtk_widget_hide(GTK_WIDGET(dialog_edit));
+}
+void button_edit_ok_clicked(GObject *object,gpointer user_data){
+    GtkTextBuffer *buff;
+     GtkWidget *message;
+     GtkTextIter first,last;
+     gchar *word;
+     gchar *mean;
+     int i;
+     word = gtk_entry_get_text(GTK_ENTRY(entry_edit_word));
+     buff = gtk_text_view_get_buffer(GTK_TEXT_VIEW(entry_edit_mean));
+     gtk_text_buffer_get_bounds (buff, &first, &last);
+     mean = gtk_text_buffer_get_text(buff, &first, &last, FALSE);
+     if(strcmp(word, "") == 0) return;
+    if(bfndky(evdata,(char*)word,&i)==0){
+    btupd(evdata,word,mean,strlen(mean)+1);
+    message = gtk_message_dialog_new(GTK_WINDOW(dialog_edit),GTK_DIALOG_DESTROY_WITH_PARENT,GTK_MESSAGE_INFO,GTK_BUTTONS_OK,"Completed!","Info");
+    gtk_window_set_title(GTK_WINDOW(message),"Information");
+    gtk_dialog_run(GTK_DIALOG(message));
+    gtk_widget_destroy(message);
+  }
+  else{
+    message = gtk_message_dialog_new(GTK_WINDOW(dialog_edit),GTK_DIALOG_DESTROY_WITH_PARENT,GTK_MESSAGE_ERROR,GTK_BUTTONS_OK,"This word not exist!","Info");
+    gtk_window_set_title(GTK_WINDOW(message),"Information");
+    gtk_dialog_run(GTK_DIALOG(message));
+    gtk_widget_destroy(message);
+  }
+  gtk_entry_set_text(GTK_ENTRY(entry_edit_word),"");
+  buff = gtk_text_view_get_buffer(entry_edit_mean); //lay chuoi cua textview_add
+  gtk_text_buffer_set_text(buff,"",1);//gan == NULL
+  list_word_search(entry_find);
+}
+void button_cancel_edit_clicked(GObject *object,gpointer user_data){
+   gtk_widget_hide(GTK_WIDGET(dialog_edit));
+}
 
 
 
@@ -191,18 +243,28 @@ int main (int argc, char *argv[]) {
      entry_find = GTK_WIDGET(gtk_builder_get_object(builder,"entry_find"));
      quit = GTK_WIDGET(gtk_builder_get_object(builder,"button_quit"));
      textview_result = GTK_TEXT_VIEW(gtk_builder_get_object(builder,"textview"));
+
      button_delete = GTK_WIDGET(gtk_builder_get_object(builder, "button_delete"));
      dialog_delete = GTK_DIALOG(gtk_builder_get_object(builder, "dialog_delete"));
      delete_button = GTK_WIDGET(gtk_builder_get_object(builder, "button_remove"));
      button_cancel_delete = GTK_WIDGET(gtk_builder_get_object(builder, "button_cancel_delete"));
      entry_delete = GTK_WIDGET(gtk_builder_get_object(builder, "entry_delete"));
+
      button_add = GTK_WIDGET(gtk_builder_get_object(builder, "button_add"));
      dialog_add = GTK_WIDGET(gtk_builder_get_object(builder, "dialog_add"));
-
      button_add_ok = GTK_WIDGET(gtk_builder_get_object(builder, "button_add_ok"));
      button_cancel_add = GTK_WIDGET(gtk_builder_get_object(builder, "button_cancel_add"));
      entry_add_word = GTK_WIDGET(gtk_builder_get_object(builder, "entry_add_word"));
      entry_add_mean = GTK_TEXT_VIEW(gtk_builder_get_object(builder, "entry_add_mean"));
+
+
+    button_edit = GTK_WIDGET(gtk_builder_get_object(builder, "button_edit"));
+    dialog_edit = GTK_DIALOG(gtk_builder_get_object(builder, "dialog_edit"));
+    button_edit_ok = GTK_WIDGET(gtk_builder_get_object(builder, "button_edit_ok"));
+     button_cancel_edit = GTK_WIDGET(gtk_builder_get_object(builder, "button_cancel_edit"));
+     entry_edit_word = GTK_WIDGET(gtk_builder_get_object(builder, "entry_edit_word"));
+     entry_edit_mean = GTK_TEXT_VIEW(gtk_builder_get_object(builder, "entry_edit_mean"));
+     quit = GTK_WIDGET(gtk_builder_get_object(builder,"button_quit"));
      gtk_builder_connect_signals(builder,NULL);
 
      //////////////////////////////////
@@ -215,6 +277,10 @@ int main (int argc, char *argv[]) {
      g_signal_connect(G_OBJECT(button_add), "clicked", G_CALLBACK(clicked_add), NULL);
      g_signal_connect(G_OBJECT(button_add_ok), "clicked", G_CALLBACK(button_add_ok_clicked), NULL);
      g_signal_connect(G_OBJECT(button_cancel_add), "clicked", G_CALLBACK(button_cancel_add_clicked), NULL);
+
+     g_signal_connect(G_OBJECT(button_edit), "clicked", G_CALLBACK(clicked_edit), NULL);
+     g_signal_connect(G_OBJECT(button_edit_ok), "clicked", G_CALLBACK(button_edit_ok_clicked), NULL);
+     g_signal_connect(G_OBJECT(button_cancel_edit), "clicked", G_CALLBACK(button_cancel_edit_clicked), NULL);
 
      //thoat chuong trinh
      g_signal_connect_swapped (quit, "clicked", G_CALLBACK (gtk_main_quit), NULL);
