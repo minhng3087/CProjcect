@@ -16,10 +16,9 @@ include_directories(inc)
 file(GLOB SOURCES "src-lib/*c" "src-main/*.c")
 add_library(inc STATIC ${SOURCES})
 add_executable(dic dic.c)
-add_executable(soundex soundex.c)
-target_link_libraries(soundex inc)
-add_executable(createdata createdata.c)
-target_link_libraries(createdata inc)
+
+add_executable(data data.c)
+target_link_libraries(data inc)
 target_link_libraries(dic ${GTK3_LIBRARIES} inc)
 
 
