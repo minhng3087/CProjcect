@@ -191,7 +191,7 @@
                 <property name="label" translatable="yes">Word</property>
               </object>
               <packing>
-                <property name="x">70</property>
+                <property name="x">50</property>
                 <property name="y">60</property>
               </packing>
             </child>
@@ -203,7 +203,7 @@
                 <property name="can_focus">True</property>
               </object>
               <packing>
-                <property name="x">190</property>
+                <property name="x">170</property>
                 <property name="y">60</property>
               </packing>
             </child>
