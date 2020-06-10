@@ -1,0 +1,1 @@
+/usr/bin/cc   -rdynamic CMakeFiles/soundex.dir/soundex.c.o  -o soundex libinc.a 

@@ -1,0 +1,1 @@
+/usr/bin/cc   -rdynamic CMakeFiles/createdata.dir/createdata.c.o  -o createdata libinc.a 

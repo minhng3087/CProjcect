@@ -1,0 +1,44 @@
+#IncludeRegexLine: ^[ 	]*[#%][ 	]*(include|import)[ 	]*[<"]([^">]+)([">])
+
+#IncludeRegexScan: ^.*$
+
+#IncludeRegexComplain: ^$
+
+#IncludeRegexTransform: 
+
+/home/minh/CProjcect/data.c
+inc/btree.h
+/home/minh/CProjcect/inc/btree.h
+stdio.h
+-
+stdlib.h
+-
+string.h
+-
+ctype.h
+-
+inc/bc.h
+/home/minh/CProjcect/inc/bc.h
+inc/bt.h
+/home/minh/CProjcect/inc/bt.h
+inc/btree_int.h
+/home/minh/CProjcect/inc/btree_int.h
+
+/home/minh/CProjcect/inc/bc.h
+limits.h
+-
+
+/home/minh/CProjcect/inc/bt.h
+stdio.h
+-
+bc.h
+/home/minh/CProjcect/inc/bc.h
+
+/home/minh/CProjcect/inc/btree.h
+bt.h
+/home/minh/CProjcect/inc/bt.h
+
+/home/minh/CProjcect/inc/btree_int.h
+bt.h
+/home/minh/CProjcect/inc/bt.h
+

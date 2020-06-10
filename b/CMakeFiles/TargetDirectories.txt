@@ -1,0 +1,5 @@
+/home/minh/CProjcect/b/CMakeFiles/rebuild_cache.dir
+/home/minh/CProjcect/b/CMakeFiles/edit_cache.dir
+/home/minh/CProjcect/b/CMakeFiles/data.dir
+/home/minh/CProjcect/b/CMakeFiles/inc.dir
+/home/minh/CProjcect/b/CMakeFiles/dic.dir
