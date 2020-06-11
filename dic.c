@@ -276,6 +276,7 @@ int main (int argc, char *argv[]) {
     g_signal_connect(G_OBJECT(button_edit), "clicked", G_CALLBACK(clicked_edit), NULL);
     g_signal_connect(G_OBJECT(button_edit_ok), "clicked", G_CALLBACK(button_edit_ok_clicked), NULL);
     g_signal_connect(G_OBJECT(button_cancel_edit), "clicked", G_CALLBACK(button_cancel_edit_clicked), NULL);
+    list_word_search(entry_edit_word);
 
     //thoat chuong trinh
     g_signal_connect_swapped (quit, "clicked", G_CALLBACK (gtk_main_quit), NULL);
